@@ -152,6 +152,7 @@ export function Session(props: {
   promptMuted?: boolean
   sidebarVisible: boolean
   onToggleSidebar: () => void
+  visibleTerminalID?: string
   width?: number
 }) {
   const setEpilogue = useEpilogue()
@@ -1308,6 +1309,7 @@ export function Session(props: {
                 defaultTab={composer.tab ?? (session()?.parentID ? "subagents" : undefined)}
                 onClose={() => setComposer("open", false)}
                 terminals={terminals}
+                visibleTerminalID={props.visibleTerminalID}
               />
               <Switch>
                 <Match when={composer.open || (!!session()?.parentID && forms().length === 0)}>{null}</Match>
