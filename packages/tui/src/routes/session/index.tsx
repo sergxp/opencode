@@ -885,6 +885,17 @@ export function Session(props: {
       },
     },
     {
+      title: "Select terminal",
+      id: "terminal.select",
+      group: "Session",
+      run: () => {
+        promptRef.current?.focus()
+        setComposer({ open: true, tab: "terminals" })
+        void terminals.refresh(route.sessionID).catch(toast.error)
+        dialog.clear()
+      },
+    },
+    {
       title: "New terminal",
       id: "session.terminal",
       group: "Session",
@@ -1293,6 +1304,7 @@ export function Session(props: {
                 open={composer.open || (!!session()?.parentID && forms().length === 0)}
                 defaultTab={composer.tab ?? (session()?.parentID ? "subagents" : undefined)}
                 onClose={() => setComposer("open", false)}
+                terminals={terminals}
               />
               <Switch>
                 <Match when={composer.open || (!!session()?.parentID && forms().length === 0)}>{null}</Match>
