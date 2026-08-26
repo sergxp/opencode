@@ -888,27 +888,60 @@ export function Session(props: {
         dialog.clear()
       },
     },
-    {
-      title: "Select terminal",
-      id: "terminal.select",
-      group: "Session",
-      run: () => {
-        promptRef.current?.focus()
-        setComposer({ open: true, tab: "terminals" })
-        void terminals.refresh(route.sessionID).catch(toast.error)
-        dialog.clear()
-      },
-    },
-    {
-      title: "New terminal",
-      id: "session.terminal",
-      group: "Session",
-      slash: { name: "terminal" },
-      run: async () => {
-        dialog.clear()
-        await terminals.newTerminal(route.sessionID).catch(toast.error)
-      },
-    },
+    ...(config.terminal?.enabled
+      ? [
+          {
+            title: props.visibleTerminalID ? "Hide terminal pane" : "Show terminal pane",
+            id: "terminal.toggle",
+            group: "Session",
+            run: () => {
+              if (props.visibleTerminalID) {
+                promptRef.current?.focus()
+                void terminals.hideTerminal(route.sessionID).catch(toast.error)
+              } else {
+                const state = terminals.get(route.sessionID)
+                const terminal =
+                  state?.terminals.find((item) => item.id === state.selectedTerminalID) ?? state?.terminals.at(-1)
+                if (terminal) void terminals.selectTerminal(route.sessionID, terminal.id).catch(toast.error)
+                else void terminals.newTerminal(route.sessionID).catch(toast.error)
+              }
+              dialog.clear()
+            },
+          },
+          {
+            title: "Select terminal",
+            id: "terminal.select",
+            group: "Session",
+            run: () => {
+              promptRef.current?.focus()
+              setComposer({ open: true, tab: "terminals" })
+              void terminals.refresh(route.sessionID).catch(toast.error)
+              dialog.clear()
+            },
+          },
+          {
+            title: "Close terminal pane",
+            id: "terminal.close",
+            group: "Session",
+            enabled: props.visibleTerminalID !== undefined,
+            run: () => {
+              promptRef.current?.focus()
+              void terminals.hideTerminal(route.sessionID).catch(toast.error)
+              dialog.clear()
+            },
+          },
+          {
+            title: "New terminal",
+            id: "session.terminal",
+            group: "Session",
+            slash: { name: "terminal" },
+            run: async () => {
+              dialog.clear()
+              await terminals.newTerminal(route.sessionID).catch(toast.error)
+            },
+          },
+        ]
+      : []),
     {
       title: (() => {
         const next = nextThinkingMode(thinkingMode())
@@ -1308,7 +1341,7 @@ export function Session(props: {
                 open={composer.open || (!!session()?.parentID && forms().length === 0)}
                 defaultTab={composer.tab ?? (session()?.parentID ? "subagents" : undefined)}
                 onClose={() => setComposer("open", false)}
-                terminals={terminals}
+                terminals={config.terminal?.enabled ? terminals : undefined}
                 visibleTerminalID={props.visibleTerminalID}
               />
               <Switch>
