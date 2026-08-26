@@ -1,5 +1,6 @@
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { Context, Effect, Layer } from "effect"
+import { readFileSync } from "node:fs"
 
 import { InstanceState } from "@/effect/instance-state"
 
@@ -25,6 +26,18 @@ import { MCP } from "@/mcp"
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 
 export function provider(model: Provider.Model) {
+  // Escape hatches for the built-in system prompt.
+  //   OPENCODE_NO_SYSTEM_PROMPT=1   -> send no built-in prompt at all
+  //   OPENCODE_SYSTEM_PROMPT_FILE=… -> replace it with the contents of a file
+  if (process.env["OPENCODE_NO_SYSTEM_PROMPT"] === "1") return []
+  const promptFile = process.env["OPENCODE_SYSTEM_PROMPT_FILE"]
+  if (promptFile) {
+    try {
+      return [readFileSync(promptFile, "utf8")]
+    } catch (e) {
+      throw new Error(`OPENCODE_SYSTEM_PROMPT_FILE could not be read: ${promptFile}`)
+    }
+  }
   if (model.api.id.includes("muse")) {
     const name = model.api.id.includes("muse-glimmer") ? "Muse Glimmer" : "Muse Spark"
     return [PROMPT_META.replaceAll("{{MODEL_NAME}}", name)]
